@@ -55,7 +55,7 @@ public class KVConfigManager {
             KVConfigSerializeWrapper kvConfigSerializeWrapper =
                     KVConfigSerializeWrapper.fromJson(content, KVConfigSerializeWrapper.class);
             if (null != kvConfigSerializeWrapper) {
-                this.configTable.putAll(kvConfigSerializeWrapper.getConfigTable());
+                this.configTable.putAll(kvConfigSerializeWrapper.getConfigTable()); // 如果配置kvConfigSerializeWrapper不为空则放入configTable容器里
                 log.info("load KV config table OK");
             }
         }

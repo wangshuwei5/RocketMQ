@@ -52,20 +52,20 @@ public class NamesrvStartup {
     }
 
     public static NamesrvController main0(String[] args) {
-        System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
+        System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion)); // 设置版本号属性
 
 
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketSndbufSize)) {
-            NettySystemConfig.socketSndbufSize = 4096;
+            NettySystemConfig.socketSndbufSize = 4096; //  如果发送缓冲区为空   默认为4M
         }
 
 
         if (null == System.getProperty(NettySystemConfig.SystemPropertySocketRcvbufSize)) {
-            NettySystemConfig.socketRcvbufSize = 4096;
+            NettySystemConfig.socketRcvbufSize = 4096; //  如果接受缓冲区为空   默认为4M
         }
 
         try {
-            //PackageConflictDetect.detectFastjson();
+            //PackageConflictDetect.detectFastjson(); // 检测包冲突,因为rocketmq 配置都是用的fastJson作为序列化工具,所以最低使用的是1.2.3版本,如果版本过低会抛出异常
 
             Options options = ServerUtil.buildCommandlineOptions(new Options());
             commandLine =
@@ -77,10 +77,10 @@ public class NamesrvStartup {
             }
 
 
-            final NamesrvConfig namesrvConfig = new NamesrvConfig();
+            final NamesrvConfig namesrvConfig = new NamesrvConfig(); // 初始化Namesrv 全局配置文件
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
-            nettyServerConfig.setListenPort(9876);
-            if (commandLine.hasOption('c')) {
+            nettyServerConfig.setListenPort(9876); // 设置namesrv监听端口
+            if (commandLine.hasOption('c')) { // 根据命令行参数,加载外部namesrvConfig及nettyServerConfig全局配置文件
                 String file = commandLine.getOptionValue('c');
                 if (file != null) {
                     InputStream in = new BufferedInputStream(new FileInputStream(file));
@@ -94,33 +94,33 @@ public class NamesrvStartup {
             }
 
 
-            if (commandLine.hasOption('p')) {
+            if (commandLine.hasOption('p')) { // 打印namesrvConfig及nettyServerConfig配置信息
                 MixAll.printObjectProperties(null, namesrvConfig);
                 MixAll.printObjectProperties(null, nettyServerConfig);
                 System.exit(0);
             }
 
-            MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
+            MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig); //将命令行指定的propertis文件 解析加载到namesrvConfig配置中
 
             if (null == namesrvConfig.getRocketmqHome()) {
                 System.out.println("Please set the " + MixAll.ROCKETMQ_HOME_ENV
                         + " variable in your environment to match the location of the RocketMQ installation");
                 System.exit(-2);
-            }
+            } // 这里必须要设置rocketMq home路径,因为要加载conf配置文件
 
             LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(lc);
             lc.reset();
-            configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
+            configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml"); // 初始化logback日志工厂,rocketMq默认使用logback作为日志输出
             final Logger log = LoggerFactory.getLogger(LoggerName.NamesrvLoggerName);
 
 
-            MixAll.printObjectProperties(log, namesrvConfig);
+            MixAll.printObjectProperties(log, namesrvConfig); // 打印namesrv配置参数
             MixAll.printObjectProperties(log, nettyServerConfig);
 
 
-            final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
+            final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig); // 初始化服务控制对象
             boolean initResult = controller.initialize();
             if (!initResult) {
                 controller.shutdown();
@@ -148,7 +148,7 @@ public class NamesrvStartup {
             }, "ShutdownHook"));
 
 
-            controller.start();
+            controller.start(); // 启动Netty及相关服务
 
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
             log.info(tip);

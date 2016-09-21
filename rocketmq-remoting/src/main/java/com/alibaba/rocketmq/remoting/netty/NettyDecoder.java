@@ -39,6 +39,13 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
 
 
     public NettyDecoder() {
+        /**
+        *maxFrameLength:最大数据长度,超出抛异常,默认为8M
+        *lengthFieldOffset:数据长度起始偏移量,默认为0
+        *lengthFieldLength:数据长度长度,默认为4
+        *lengthAdjustment:数据长度调节量,默认为0
+        *initialBytesToStrip:数据解码时移除的字节量,默认为4
+        */
         super(FRAME_MAX_LENGTH, 0, 4, 0, 4);
     }
 
@@ -54,7 +61,7 @@ public class NettyDecoder extends LengthFieldBasedFrameDecoder {
 
             ByteBuffer byteBuffer = frame.nioBuffer();
 
-            return RemotingCommand.decode(byteBuffer);
+            return RemotingCommand.decode(byteBuffer); //解码ByteBuf转换成RemotingCommand,服务器与客户端通过传递 RemotingCommand来交互,包含Header,Body
         } catch (Exception e) {
             log.error("decode exception, " + RemotingHelper.parseChannelRemoteAddr(ctx.channel()), e);
             RemotingUtil.closeChannel(ctx.channel());

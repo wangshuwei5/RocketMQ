@@ -63,16 +63,16 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
     private final EventLoopGroup eventLoopGroupBoss;
     private final NettyServerConfig nettyServerConfig;
 
-    private final ExecutorService publicExecutor;
+    private final ExecutorService publicExecutor; // // 处理Callback应答器
     private final ChannelEventListener channelEventListener;
 
-    private final Timer timer = new Timer("ServerHouseKeepingService", true);
+    private final Timer timer = new Timer("ServerHouseKeepingService", true); // 定时器
     private DefaultEventExecutorGroup defaultEventExecutorGroup;
 
     private RPCHook rpcHook;
 
 
-    private int port = 0;
+    private int port = 0; // 本地server绑定的端口
 
 
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig) {
@@ -81,17 +81,17 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
 
     public NettyRemotingServer(final NettyServerConfig nettyServerConfig, final ChannelEventListener channelEventListener) {
-        super(nettyServerConfig.getServerOnewaySemaphoreValue(), nettyServerConfig.getServerAsyncSemaphoreValue());
-        this.serverBootstrap = new ServerBootstrap();
-        this.nettyServerConfig = nettyServerConfig;
-        this.channelEventListener = channelEventListener;
+        super(nettyServerConfig.getServerOnewaySemaphoreValue(), nettyServerConfig.getServerAsyncSemaphoreValue()); // 设置父类信号量
+        this.serverBootstrap = new ServerBootstrap(); // 创建 netty 启动类
+        this.nettyServerConfig = nettyServerConfig; // 设置netty 配置信息
+        this.channelEventListener = channelEventListener; // 设置扩展的一个时间监听
 
-        int publicThreadNums = nettyServerConfig.getServerCallbackExecutorThreads();
+        int publicThreadNums = nettyServerConfig.getServerCallbackExecutorThreads(); // 获取异步线程数量
         if (publicThreadNums <= 0) {
-            publicThreadNums = 4;
+            publicThreadNums = 4; // 如果小于等于0 默认设置为4
         }
 
-        this.publicExecutor = Executors.newFixedThreadPool(publicThreadNums, new ThreadFactory() {
+        this.publicExecutor = Executors.newFixedThreadPool(publicThreadNums, new ThreadFactory() { // 创建 处理Callback应答线程池
             private AtomicInteger threadIndex = new AtomicInteger(0);
 
 
@@ -101,7 +101,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
             }
         });
 
-        this.eventLoopGroupBoss = new NioEventLoopGroup(1, new ThreadFactory() {
+        this.eventLoopGroupBoss = new NioEventLoopGroup(1, new ThreadFactory() { // 创建netty eventLoopGroupBoss 默认线程为1
             private AtomicInteger threadIndex = new AtomicInteger(0);
 
 
@@ -113,7 +113,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
         if (RemotingUtil.isLinuxPlatform() //
                 && nettyServerConfig.isUseEpollNativeSelector()) {
-            this.eventLoopGroupSelector = new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() {
+            this.eventLoopGroupSelector = new EpollEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() { // Linux用epoll
                 private AtomicInteger threadIndex = new AtomicInteger(0);
                 private int threadTotal = nettyServerConfig.getServerSelectorThreads();
 
@@ -124,7 +124,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                 }
             });
         } else {
-            this.eventLoopGroupSelector = new NioEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() {
+            this.eventLoopGroupSelector = new NioEventLoopGroup(nettyServerConfig.getServerSelectorThreads(), new ThreadFactory() { // 非Linux用Nio
                 private AtomicInteger threadIndex = new AtomicInteger(0);
                 private int threadTotal = nettyServerConfig.getServerSelectorThreads();
 
@@ -134,7 +134,7 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                     return new Thread(r, String.format("NettyServerNIOSelector_%d_%d", threadTotal, this.threadIndex.incrementAndGet()));
                 }
             });
-        }
+        } // 创建 netty eventLoopGroupWorker 默认线程为3
     }
 
 
@@ -153,42 +153,42 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
                     }
                 });
 
-        ServerBootstrap childHandler = //
-                this.serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector).channel(NioServerSocketChannel.class)
-                        //
+        ServerBootstrap childHandler = // 前者为1个线程的线程池，用于处理客户端连接建立事件，后者为3个线程的线程池，用于处理已经建立连接的io事件
+                this.serverBootstrap.group(this.eventLoopGroupBoss, this.eventLoopGroupSelector).channel(NioServerSocketChannel.class) // 客户端连接事件创建连接
+                        // 最大连接数 参见java.net.ServerSocket.ServerSocket(int port, int backlog)
                         .option(ChannelOption.SO_BACKLOG, 1024)
-                        //
+                        // 之前的连接处于timeout状态，新可以使用该地址 参见java.net.ServerSocket.setReuseAddress(boolean on)
                         .option(ChannelOption.SO_REUSEADDR, true)
-                        //
+                        // 不开启长连，参见java.net.SocketOptions.SO_KEEPALIVE
                         .option(ChannelOption.SO_KEEPALIVE, false)
-                        //
+                        // 对此连接禁用 Nagle算法，参见java.net.SocketOptions.TCP_NODELAY 
                         .childOption(ChannelOption.TCP_NODELAY, true)
-                        //
+                        // 网络发送基础缓冲区建议大小，值为65535，参见java.net.SocketOptions.SO_SNDBUF 
                         .option(ChannelOption.SO_SNDBUF, nettyServerConfig.getServerSocketSndBufSize())
-                        //
+                        // 网络接收基础缓冲区建议大小，值为65535，参见java.net.SocketOptions.SO_RCVBUF
                         .option(ChannelOption.SO_RCVBUF, nettyServerConfig.getServerSocketRcvBufSize())
-                        //
+                        // 设置监听端口
                         .localAddress(new InetSocketAddress(this.nettyServerConfig.getListenPort()))
                         .childHandler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             public void initChannel(SocketChannel ch) throws Exception {
                                 ch.pipeline().addLast(
-                                        //
-                                        defaultEventExecutorGroup, //
-                                        new NettyEncoder(), //
-                                        new NettyDecoder(), //
-                                        new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()), //
-                                        new NettyConnetManageHandler(), //
-                                        new NettyServerHandler());
+                                        // 为当前channel的pipeline添加自定义处理器
+                                        defaultEventExecutorGroup, // 默认为8个线程的线程池
+                                        new NettyEncoder(), // 输出数据时进行编码
+                                        new NettyDecoder(), // 输入数据时进行解码
+                                        new IdleStateHandler(0, 0, nettyServerConfig.getServerChannelMaxIdleTimeSeconds()), // 默认120秒检测一次连接是否空闲
+                                        new NettyConnetManageHandler(), // 处理连接事件，建立，断开等等
+                                        new NettyServerHandler()); // 处理请求，根据请求码(com.alibaba.rocketmq.common.protocol.RequestCode)来查找相应的处理器，处理请求，处理器注册参考类com.alibaba.rocketmq.broker.BrokerController.registerProcessor
                             }
                         });
 
         if (nettyServerConfig.isServerPooledByteBufAllocatorEnable()) {
-            childHandler.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+            childHandler.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT); // 这个选项有可能会占用大量堆外内存，暂时不使用。
         }
 
         try {
-            ChannelFuture sync = this.serverBootstrap.bind().sync();
+            ChannelFuture sync = this.serverBootstrap.bind().sync(); // 创建channel,绑定端口，等待返回
             InetSocketAddress addr = (InetSocketAddress) sync.channel().localAddress();
             this.port = addr.getPort();
         } catch (InterruptedException e1) {
@@ -196,10 +196,10 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         }
 
         if (this.channelEventListener != null) {
-            this.nettyEventExecuter.start();
+            this.nettyEventExecuter.start(); // 启动事件线程
         }
 
-        this.timer.scheduleAtFixedRate(new TimerTask() {
+        this.timer.scheduleAtFixedRate(new TimerTask() { // 每隔1秒扫描下异步调用超时情况
 
             @Override
             public void run() {
@@ -311,15 +311,15 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, RemotingCommand msg) throws Exception {
-            processMessageReceived(ctx, msg);
+            processMessageReceived(ctx, msg); // netty服务处理
         }
     }
 
     class NettyConnetManageHandler extends ChannelDuplexHandler {
         @Override
-        public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        public void channelRegistered(ChannelHandlerContext ctx) throws Exception { //hannel注册 NettyConnetManageHandler
             final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
-            log.info("NETTY SERVER PIPELINE: channelRegistered {}", remoteAddress);
+            log.info("NETTY SERVER PIPELINE: channelRegistered {}", remoteAddress); // 打印出远程注册地址，调用父类注册channel
             super.channelRegistered(ctx);
         }
 
@@ -335,9 +335,11 @@ public class NettyRemotingServer extends NettyRemotingAbstract implements Remoti
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
-            log.info("NETTY SERVER PIPELINE: channelActive, the channel[{}]", remoteAddress);
+            log.info("NETTY SERVER PIPELINE: channelActive, the channel[{}]", remoteAddress); // 打印出channel激活地址，调用父类激活操作
             super.channelActive(ctx);
-
+            
+            // 判断NettyRemotingServer channelEventListener不为空的时候，放入Netty连接事件
+           // 主要是处理 CONNECT,CLOSE,IDLE,EXCEPTION 处理Channel被关闭，下线broker
             if (NettyRemotingServer.this.channelEventListener != null) {
                 NettyRemotingServer.this.putNettyEvent(new NettyEvent(NettyEventType.CONNECT, remoteAddress.toString(), ctx.channel()));
             }

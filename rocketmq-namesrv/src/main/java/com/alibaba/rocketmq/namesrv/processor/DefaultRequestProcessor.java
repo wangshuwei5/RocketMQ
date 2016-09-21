@@ -64,7 +64,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
                     request);
         }
 
-        switch (request.getCode()) {
+        switch (request.getCode()) { // 根据请求code做响应的操作，比如注册broker信息
             case RequestCode.PUT_KV_CONFIG:
                 return this.putKVConfig(ctx, request);
             case RequestCode.GET_KV_CONFIG:
@@ -74,7 +74,7 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
             case RequestCode.REGISTER_BROKER:
                 Version brokerVersion = MQVersion.value2Version(request.getVersion());
                 if (brokerVersion.ordinal() >= MQVersion.Version.V3_0_11.ordinal()) {
-                    return this.registerBrokerWithFilterServer(ctx, request);
+                    return this.registerBrokerWithFilterServer(ctx, request); // 新版本Broker，支持Filter Server
                 }
                 else {
                     return this.registerBroker(ctx, request);
@@ -170,36 +170,36 @@ public class DefaultRequestProcessor implements NettyRequestProcessor {
 
     public RemotingCommand registerBrokerWithFilterServer(ChannelHandlerContext ctx, RemotingCommand request)
             throws RemotingCommandException {
-        final RemotingCommand response = RemotingCommand.createResponseCommand(RegisterBrokerResponseHeader.class);
-        final RegisterBrokerResponseHeader responseHeader = (RegisterBrokerResponseHeader) response.readCustomHeader();
+        final RemotingCommand response = RemotingCommand.createResponseCommand(RegisterBrokerResponseHeader.class); // 创建response响应RemotingCommand
+        final RegisterBrokerResponseHeader responseHeader = (RegisterBrokerResponseHeader) response.readCustomHeader(); // 获取响应请求头
         final RegisterBrokerRequestHeader requestHeader =
-                (RegisterBrokerRequestHeader) request.decodeCommandCustomHeader(RegisterBrokerRequestHeader.class);
+                (RegisterBrokerRequestHeader) request.decodeCommandCustomHeader(RegisterBrokerRequestHeader.class); // 解码定制的头信息
 
         RegisterBrokerBody registerBrokerBody = new RegisterBrokerBody();
 
         if (request.getBody() != null) {
-            registerBrokerBody = RegisterBrokerBody.decode(request.getBody(), RegisterBrokerBody.class);
+            registerBrokerBody = RegisterBrokerBody.decode(request.getBody(), RegisterBrokerBody.class); // 解码请求body包含topic config
         } else {
             registerBrokerBody.getTopicConfigSerializeWrapper().getDataVersion().setCounter(new AtomicLong(0));
             registerBrokerBody.getTopicConfigSerializeWrapper().getDataVersion().setTimestatmp(0);
         }
 
         RegisterBrokerResult result = this.namesrvController.getRouteInfoManager().registerBroker(//
-                requestHeader.getClusterName(), // 1
-                requestHeader.getBrokerAddr(), // 2
-                requestHeader.getBrokerName(), // 3
-                requestHeader.getBrokerId(), // 4
-                requestHeader.getHaServerAddr(),// 5
-                registerBrokerBody.getTopicConfigSerializeWrapper(), // 6
-                registerBrokerBody.getFilterServerList(),//
-                ctx.channel()// 7
-        );
+                requestHeader.getClusterName(), // 1集群名称
+                requestHeader.getBrokerAddr(), // 2broker地址
+                requestHeader.getBrokerName(), // 3broker名称
+                requestHeader.getBrokerId(), // 4brokerID
+                requestHeader.getHaServerAddr(),// 5HA地址
+                registerBrokerBody.getTopicConfigSerializeWrapper(), // 6topic config配置
+                registerBrokerBody.getFilterServerList(),//获取过滤服务
+                ctx.channel()// 7获取broker channel
+        );// 注册broker信息
 
-        responseHeader.setHaServerAddr(result.getHaServerAddr());
-        responseHeader.setMasterAddr(result.getMasterAddr());
+        responseHeader.setHaServerAddr(result.getHaServerAddr()); // 设置HA地址,broker启动后 端口+1作为HA备用地址
+        responseHeader.setMasterAddr(result.getMasterAddr()); // 设置主地址
 
 
-        byte[] jsonValue = this.namesrvController.getKvConfigManager().getKVListByNamespace(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG);
+        byte[] jsonValue = this.namesrvController.getKvConfigManager().getKVListByNamespace(NamesrvUtil.NAMESPACE_ORDER_TOPIC_CONFIG); // 获取顺序消息 topic 列表
         response.setBody(jsonValue);
 
         response.setCode(ResponseCode.SUCCESS);

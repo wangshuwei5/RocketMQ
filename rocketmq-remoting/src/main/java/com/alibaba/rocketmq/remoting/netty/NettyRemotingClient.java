@@ -131,29 +131,29 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                         return new Thread(r, "NettyClientWorkerThread_" + this.threadIndex.incrementAndGet());
                     }
                 });
-
-        Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)//
-                //
+                            // 默认为1个线程的线程池，处理channel中的io事件
+        Bootstrap handler = this.bootstrap.group(this.eventLoopGroupWorker).channel(NioSocketChannel.class)// 与ServerBootstrap一致
+        		// 对此连接禁用 Nagle算法，参见java.net.SocketOptions.TCP_NODELAY
                 .option(ChannelOption.TCP_NODELAY, true)
-                //
+                // 不开启长连，参见java.net.SocketOptions.SO_KEEPALIVE
                 .option(ChannelOption.SO_KEEPALIVE, false)
                 //
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, nettyClientConfig.getConnectTimeoutMillis())
-                //
+                // 网络发送基础缓冲区建议大小，值为65535，参见java.net.SocketOptions.SO_SNDBUF
                 .option(ChannelOption.SO_SNDBUF, nettyClientConfig.getClientSocketSndBufSize())
-                //
+                // 网络接收基础缓冲区建议大小，值为65535，参见java.net.SocketOptions.SO_RCVBUF
                 .option(ChannelOption.SO_RCVBUF, nettyClientConfig.getClientSocketRcvBufSize())
                 //
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(//
-                                defaultEventExecutorGroup, //
-                                new NettyEncoder(), //
-                                new NettyDecoder(), //
-                                new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()), //
-                                new NettyConnetManageHandler(), //
-                                new NettyClientHandler());
+                        ch.pipeline().addLast(// 为当前channel的pipeline添加自定义处理器
+                                defaultEventExecutorGroup, // 默认为4个线程的线程池
+                                new NettyEncoder(), // 输出数据时进行编码
+                                new NettyDecoder(), // 输入数据时进行解码
+                                new IdleStateHandler(0, 0, nettyClientConfig.getClientChannelMaxIdleTimeSeconds()), // 默认120秒检测一次连接是否空闲
+                                new NettyConnetManageHandler(), // 处理连接事件，建立，断开等等
+                                new NettyClientHandler()); // 处理请求，根据请求码(com.alibaba.rocketmq.common.protocol.RequestCode)来查找相应的处理器，处理请求，处理器注册参考类com.alibaba.rocketmq.client.impl.MQClientAPIImpl的初始化方法，处理器为com.alibaba.rocketmq.client.impl.ClientRemotingProcessor
                     }
                 });
 

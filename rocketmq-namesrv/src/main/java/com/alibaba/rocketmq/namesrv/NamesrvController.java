@@ -42,26 +42,26 @@ import java.util.concurrent.TimeUnit;
 public class NamesrvController {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.NamesrvLoggerName);
 
-    private final NamesrvConfig namesrvConfig;
+    private final NamesrvConfig namesrvConfig; // Name Server配置
 
-    private final NettyServerConfig nettyServerConfig;
+    private final NettyServerConfig nettyServerConfig; // netty通信层配置
 
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
             "NSScheduledThread"));
-    private final KVConfigManager kvConfigManager;
-    private final RouteInfoManager routeInfoManager;
+    private final KVConfigManager kvConfigManager; // 创建KV配置管理
+    private final RouteInfoManager routeInfoManager; // 创建路由信息管理
 
-    private RemotingServer remotingServer;
+    private RemotingServer remotingServer; // 服务端通信层对象
 
-    private BrokerHousekeepingService brokerHousekeepingService;
+    private BrokerHousekeepingService brokerHousekeepingService; // 接收Broker连接事件处理服务
 
-    private ExecutorService remotingExecutor;
+    private ExecutorService remotingExecutor; // 服务端网络请求处理线程池
 
 
     public NamesrvController(NamesrvConfig namesrvConfig, NettyServerConfig nettyServerConfig) {
         this.namesrvConfig = namesrvConfig;
         this.nettyServerConfig = nettyServerConfig;
-        this.kvConfigManager = new KVConfigManager(this);
+        this.kvConfigManager = new KVConfigManager(this); 
         this.routeInfoManager = new RouteInfoManager();
         this.brokerHousekeepingService = new BrokerHousekeepingService(this);
     }
@@ -69,18 +69,20 @@ public class NamesrvController {
 
     public boolean initialize() {
 
-        this.kvConfigManager.load();
+        this.kvConfigManager.load(); // 加载Kv配置文件
 
 
-        this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
+        this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService); // 初始化通信层
 
 
         this.remotingExecutor =
-                Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
+                Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_")); //  初始化服务端网络请求处理线程池
 
-        this.registerProcessor();
+        this.registerProcessor(); // 注册Name Server网络请求处理
 
-
+        
+        // NamesrvController初始化时启动线程定时调用RouteInfoManger的scanNotActiveBroker方法来定时清理不 活动的broker
+        //（默认两分钟没有向namesrv发送心跳更新BrokerLiveInfo时间戳的），比较BrokerLiveInfo的时间戳， 如果过期关闭channel连接
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -89,7 +91,7 @@ public class NamesrvController {
             }
         }, 5, 10, TimeUnit.SECONDS);
 
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() { // 启动线程定时调用printAllPeriodically方法打印KV配置信息包含变化的配置
 
             @Override
             public void run() {

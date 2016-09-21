@@ -79,14 +79,14 @@ public class RemotingCommand {
     /**
 
      */
-    private int code;
-    private LanguageCode language = LanguageCode.JAVA;
-    private int version = 0;
-    private int opaque = requestId.getAndIncrement();
-    private int flag = 0;
-    private String remark;
-    private HashMap<String, String> extFields;
-    private transient CommandCustomHeader customHeader;
+    private int code; // code码
+    private LanguageCode language = LanguageCode.JAVA; // 交互语言
+    private int version = 0; // 版本
+    private int opaque = requestId.getAndIncrement(); // 操作
+    private int flag = 0; // 标示
+    private String remark; 
+    private HashMap<String, String> extFields; // 扩展字段
+    private transient CommandCustomHeader customHeader; // 用户header
     /**
 
      */
@@ -94,7 +94,7 @@ public class RemotingCommand {
     /**
 
      */
-    private transient byte[] body;
+    private transient byte[] body; // 消息体
 
 
     protected RemotingCommand() {
