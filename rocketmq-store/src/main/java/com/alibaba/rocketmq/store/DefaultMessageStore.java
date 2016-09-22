@@ -101,25 +101,25 @@ public class DefaultMessageStore implements MessageStore {
                                final MessageArrivingListener messageArrivingListener, final BrokerConfig brokerConfig) throws IOException {
         this.messageArrivingListener = messageArrivingListener;
         this.brokerConfig = brokerConfig;
-        this.messageStoreConfig = messageStoreConfig;
-        this.brokerStatsManager = brokerStatsManager;
-        this.allocateMapedFileService = new AllocateMapedFileService(this);
-        this.commitLog = new CommitLog(this);
-        this.consumeQueueTable = new ConcurrentHashMap<String/* topic */, ConcurrentHashMap<Integer/* queueId */, ConsumeQueue>>(32);
+        this.messageStoreConfig = messageStoreConfig;// 消息存储配置
+        this.brokerStatsManager = brokerStatsManager;// broker状态管理
+        this.allocateMapedFileService = new AllocateMapedFileService(this);// Pagecache文件封装 就是NIO的MappedByteBuffer内存映射
+        this.commitLog = new CommitLog(this);// 落地所有的元数据信息，数据可靠性保护
+        this.consumeQueueTable = new ConcurrentHashMap<String/* topic */, ConcurrentHashMap<Integer/* queueId */, ConsumeQueue>>(32);// 消费队列实现
 
-        this.flushConsumeQueueService = new FlushConsumeQueueService();
-        this.cleanCommitLogService = new CleanCommitLogService();
-        this.cleanConsumeQueueService = new CleanConsumeQueueService();
-        this.storeStatsService = new StoreStatsService();
-        this.indexService = new IndexService(this);
-        this.haService = new HAService(this);
+        this.flushConsumeQueueService = new FlushConsumeQueueService();//  逻辑队列刷盘服务
+        this.cleanCommitLogService = new CleanCommitLogService();// 清理物理文件服务
+        this.cleanConsumeQueueService = new CleanConsumeQueueService();// 清理逻辑文件服务
+        this.storeStatsService = new StoreStatsService();// 存储层内部统计服务
+        this.indexService = new IndexService(this);// 消息索引服务
+        this.haService = new HAService(this);// HA服务，负责同步双写，异步复制功能
 
         this.reputMessageService = new ReputMessageService();
 
         this.scheduleMessageService = new ScheduleMessageService(this);
 
 
-        this.allocateMapedFileService.start();
+        this.allocateMapedFileService.start();// load过程依赖此服务，所以提前启动
 
         this.indexService.start();
     }
@@ -145,30 +145,30 @@ public class DefaultMessageStore implements MessageStore {
         boolean result = true;
 
         try {
-            boolean lastExitOK = !this.isTempFileExist();
+            boolean lastExitOK = !this.isTempFileExist(); // 是否是异常停机 根据store目录下 abort文件判断
             log.info("last shutdown {}", (lastExitOK ? "normally" : "abnormally"));
 
 
 
 
             if (null != scheduleMessageService) {
-                result = result && this.scheduleMessageService.load();
+                result = result && this.scheduleMessageService.load();// 加载延迟配置
             }
 
             // load Commit Log
-            result = result && this.commitLog.load();
+            result = result && this.commitLog.load();// 加载消息物理文件 位置为commitlog
 
             // load Consume Queue
             result = result && this.loadConsumeQueue();
 
             if (result) {
                 this.storeCheckpoint =
-                        new StoreCheckpoint(StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
+                        new StoreCheckpoint(StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));// 记录存储模型最终一致的时间点
 
                 this.indexService.load(lastExitOK);
 
 
-                this.recover(lastExitOK);
+                this.recover(lastExitOK);// // 尝试恢复数据
 
                 log.info("load over, and the max phy offset = {}", this.getMaxPhyOffset());
             }
@@ -190,12 +190,12 @@ public class DefaultMessageStore implements MessageStore {
      * @throws Exception
      */
     public void start() throws Exception {
-        this.flushConsumeQueueService.start();
-        this.commitLog.start();
-        this.storeStatsService.start();
+        this.flushConsumeQueueService.start();//  逻辑队列刷盘服务 就是把内存的msg刷入磁盘
+        this.commitLog.start();// 元数据刷盘服务
+        this.storeStatsService.start();//  存储层状态服务
 
 
-        if (this.scheduleMessageService != null && SLAVE != messageStoreConfig.getBrokerRole()) {
+        if (this.scheduleMessageService != null && SLAVE != messageStoreConfig.getBrokerRole()) {// slave不启动scheduleMessageService避免对消费队列的并发操作
             this.scheduleMessageService.start();
         }
 
@@ -206,11 +206,11 @@ public class DefaultMessageStore implements MessageStore {
         }
         this.reputMessageService.start();
 
-        this.haService.start();
+        this.haService.start();// 启动HA服务
 
-        this.createTempFile();
-        this.addScheduleTask();
-        this.shutdown = false;
+        this.createTempFile();// 启动服务后，在存储根目录创建临时文件
+        this.addScheduleTask();// 定时删除过期文件
+        this.shutdown = false;// 标志shutdown 状态
     }
 
     /**

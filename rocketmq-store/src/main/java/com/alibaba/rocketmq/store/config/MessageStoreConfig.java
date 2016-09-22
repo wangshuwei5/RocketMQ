@@ -29,89 +29,89 @@ import java.io.File;
 public class MessageStoreConfig {
     //The root directory in which the log data is kept
     @ImportantField
-    private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
+    private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";// 存储根目录
 
     //The directory in which the commitlog is kept
     @ImportantField
     private String storePathCommitLog = System.getProperty("user.home") + File.separator + "store"
-            + File.separator + "commitlog";
+            + File.separator + "commitlog";// CommitLog存储目录
 
     // CommitLog file size,default is 1G
-    private int mapedFileSizeCommitLog = 1024 * 1024 * 1024;
+    private int mapedFileSizeCommitLog = 1024 * 1024 * 1024;// CommitLog每个文件大小 1G
     // ConsumeQueue file size, default is 30W
-    private int mapedFileSizeConsumeQueue = 300000 * ConsumeQueue.CQStoreUnitSize;
+    private int mapedFileSizeConsumeQueue = 300000 * ConsumeQueue.CQStoreUnitSize;// ConsumeQueue每个文件大小 默认存储30W条消息
     // CommitLog flush interval
     @ImportantField
-    private int flushIntervalCommitLog = 1000;
+    private int flushIntervalCommitLog = 1000;// CommitLog刷盘间隔时间（单位毫秒）
     // Whether schedule flush,default is real-time
     @ImportantField
-    private boolean flushCommitLogTimed = false;
+    private boolean flushCommitLogTimed = false;// 是否定时方式刷盘，默认是实时刷盘
     // ConsumeQueue flush interval
-    private int flushIntervalConsumeQueue = 1000;
+    private int flushIntervalConsumeQueue = 1000;// ConsumeQueue刷盘间隔时间（单位毫秒）
     // Resource reclaim interval
-    private int cleanResourceInterval = 10000;
+    private int cleanResourceInterval = 10000;// 清理资源间隔时间（单位毫秒）
     // CommitLog removal interval
-    private int deleteCommitLogFilesInterval = 100;
+    private int deleteCommitLogFilesInterval = 100;// 删除多个CommitLog文件的间隔时间（单位毫秒）
     // ConsumeQueue removal interval
-    private int deleteConsumeQueueFilesInterval = 100;
-    private int destroyMapedFileIntervalForcibly = 1000 * 120;
-    private int redeleteHangedFileInterval = 1000 * 120;
+    private int deleteConsumeQueueFilesInterval = 100;// 删除多个ConsumeQueue文件的间隔时间（单位毫秒
+    private int destroyMapedFileIntervalForcibly = 1000 * 120;// 强制删除文件间隔时间（单位毫秒）
+    private int redeleteHangedFileInterval = 1000 * 120;// 定期检查Hanged文件间隔时间（单位毫秒
     // When to delete,default is at 4 am
     @ImportantField
-    private String deleteWhen = "04";
-    private int diskMaxUsedSpaceRatio = 75;
+    private String deleteWhen = "04";// 何时触发删除文件, 默认凌晨4点删除文件
+    private int diskMaxUsedSpaceRatio = 75;// 磁盘空间最大使用率
     // The number of hours to keep a log file before deleting it (in hours)
     @ImportantField
-    private int fileReservedTime = 72;
+    private int fileReservedTime = 72;// 文件保留时间（单位小时）
     // Flow control for ConsumeQueue
-    private int putMsgIndexHightWater = 600000;
+    private int putMsgIndexHightWater = 600000;// 写消息索引到ConsumeQueue，缓冲区高水位，超过则开始流控
     // The maximum size of a single log file，default is 512K
-    private int maxMessageSize = 1024 * 1024 * 4;
+    private int maxMessageSize = 1024 * 1024 * 4;// 最大消息大小，默认4M
     // Whether check the CRC32 of the records consumed.
     // This ensures no on-the-wire or on-disk corruption to the messages occurred.
     // This check adds some overhead, so it may be disabled in cases seeking extreme performance.
-    private boolean checkCRCOnRecover = true;
+    private boolean checkCRCOnRecover = true;// 重启时，是否校验CRC
     // How many pages are to be flushed when flush CommitLog
-    private int flushCommitLogLeastPages = 4;
+    private int flushCommitLogLeastPages = 4;// 刷CommitLog，至少刷几个PAGE
     // Flush page size when the disk in warming state
     private int flushLeastPagesWhenWarmMapedFile = 1024 / 4 * 16;
     // How many pages are to be flushed when flush ConsumeQueue
-    private int flushConsumeQueueLeastPages = 2;
-    private int flushCommitLogThoroughInterval = 1000 * 10;
-    private int flushConsumeQueueThoroughInterval = 1000 * 60;
+    private int flushConsumeQueueLeastPages = 2;// 刷ConsumeQueue，至少刷几个PAGE
+    private int flushCommitLogThoroughInterval = 1000 * 10;// 刷CommitLog，彻底刷盘间隔时间
+    private int flushConsumeQueueThoroughInterval = 1000 * 60;// 刷ConsumeQueue，彻底刷盘间隔时间
     @ImportantField
-    private int maxTransferBytesOnMessageInMemory = 1024 * 256;
+    private int maxTransferBytesOnMessageInMemory = 1024 * 256;// 最大被拉取的消息字节数，消息在内存
     @ImportantField
-    private int maxTransferCountOnMessageInMemory = 32;
+    private int maxTransferCountOnMessageInMemory = 32;// 最大被拉取的消息个数，消息在内存
     @ImportantField
-    private int maxTransferBytesOnMessageInDisk = 1024 * 64;
+    private int maxTransferBytesOnMessageInDisk = 1024 * 64;// 最大被拉取的消息字节数，消息在磁盘
     @ImportantField
-    private int maxTransferCountOnMessageInDisk = 8;
+    private int maxTransferCountOnMessageInDisk = 8;// 最大被拉取的消息个数，消息在磁盘
     @ImportantField
-    private int accessMessageInMemoryMaxRatio = 40;
+    private int accessMessageInMemoryMaxRatio = 40;// 命中消息在内存的最大比例
     @ImportantField
-    private boolean messageIndexEnable = true;
+    private boolean messageIndexEnable = true;// 是否开启消息索引功能
     private int maxHashSlotNum = 5000000;
     private int maxIndexNum = 5000000 * 4;
     private int maxMsgsNumBatch = 64;
     @ImportantField
-    private boolean messageIndexSafe = false;
+    private boolean messageIndexSafe = false;// 是否使用安全的消息索引功能，即可靠模式。可靠模式下，异常宕机恢复慢；非可靠模式下，异常宕机恢复快
     private int haListenPort = 10912;
     private int haSendHeartbeatInterval = 1000 * 5;
     private int haHousekeepingInterval = 1000 * 20;
     private int haTransferBatchSize = 1024 * 32;
     @ImportantField
-    private String haMasterAddress = null;
-    private int haSlaveFallbehindMax = 1024 * 1024 * 256;
+    private String haMasterAddress = null;// 如果不设置，则从NameServer获取Master HA服务地址
+    private int haSlaveFallbehindMax = 1024 * 1024 * 256;// Slave落后Master超过此值，则认为存在异常
     @ImportantField
     private BrokerRole brokerRole = BrokerRole.ASYNC_MASTER;
     @ImportantField
     private FlushDiskType flushDiskType = FlushDiskType.ASYNC_FLUSH;
-    private int syncFlushTimeout = 1000 * 5;
-    private String messageDelayLevel = "1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h";
+    private int syncFlushTimeout = 1000 * 5;// 同步刷盘超时时间
+    private String messageDelayLevel = "1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h";// 定时消息相关
     private long flushDelayOffsetInterval = 1000 * 10;
     @ImportantField
-    private boolean cleanFileForciblyEnable = true;
+    private boolean cleanFileForciblyEnable = true;// 磁盘空间超过90%警戒水位，自动开始删除文件
     private boolean warmMapedFileEnable = false;
     private boolean offsetCheckInSlave = false;
     private boolean debugLockEnable = false;

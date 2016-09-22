@@ -28,53 +28,53 @@ import java.net.UnknownHostException;
  * @author shijia.wxr
  */
 public class BrokerConfig {
-    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));
+    private String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY, System.getenv(MixAll.ROCKETMQ_HOME_ENV));// 获取rocketMq目录
     @ImportantField
-    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
+    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));// 获取namesrc地址
     @ImportantField
-    private String brokerIP1 = RemotingUtil.getLocalAddress();
-    private String brokerIP2 = RemotingUtil.getLocalAddress();
+    private String brokerIP1 = RemotingUtil.getLocalAddress();// 获取本地地址
+    private String brokerIP2 = RemotingUtil.getLocalAddress();// 获取本地地址
     @ImportantField
-    private String brokerName = localHostName();
+    private String brokerName = localHostName();// 获取broker hostname
     @ImportantField
-    private String brokerClusterName = "DefaultCluster";
+    private String brokerClusterName = "DefaultCluster";// 默认集群名称
     @ImportantField
-    private long brokerId = MixAll.MASTER_ID;
-    private int brokerPermission = PermName.PERM_READ | PermName.PERM_WRITE;
-    private int defaultTopicQueueNums = 8;
+    private long brokerId = MixAll.MASTER_ID;// master集群ID 必须为0
+    private int brokerPermission = PermName.PERM_READ | PermName.PERM_WRITE;// broker权限 默认读与写
+    private int defaultTopicQueueNums = 8;// 默认队列数量
     @ImportantField
-    private boolean autoCreateTopicEnable = true;
+    private boolean autoCreateTopicEnable = true;// 自动创建Topic功能是否开启（线上建议关闭）
 
-    private boolean clusterTopicEnable = true;
+    private boolean clusterTopicEnable = true;// 自动创建以集群名字命名的Topic功能是否开启
 
-    private boolean brokerTopicEnable = true;
+    private boolean brokerTopicEnable = true;// 自动创建以服务器名字命名的Topic功能是否开启
     @ImportantField
-    private boolean autoCreateSubscriptionGroup = true;
+    private boolean autoCreateSubscriptionGroup = true;// 自动创建订阅组功能是否开启（线上建议关闭）
     private String messageStorePlugIn = "";
 
-    private int sendMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 4;
-    private int pullMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 2;
-    private int adminBrokerThreadPoolNums = 16;
-    private int clientManageThreadPoolNums = 16;
+    private int sendMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 4;// 发送消息线程池数量
+    private int pullMessageThreadPoolNums = 16 + Runtime.getRuntime().availableProcessors() * 2;// 订阅消息线程池数量
+    private int adminBrokerThreadPoolNums = 16;// adminBroker 线程池数量 各自独立的线程池 做到线程池隔离
+    private int clientManageThreadPoolNums = 16;// clientManage线程池数量
 
-    private int flushConsumerOffsetInterval = 1000 * 5;
+    private int flushConsumerOffsetInterval = 1000 * 5;// flush消费端 文件偏移时间戳 默认5秒
 
-    private int flushConsumerOffsetHistoryInterval = 1000 * 60;
+    private int flushConsumerOffsetHistoryInterval = 1000 * 60;// flush消费端 历史文件偏移时间戳 默认1
 
     @ImportantField
-    private boolean rejectTransactionMessage = false;
+    private boolean rejectTransactionMessage = false;// 是否拒绝接收事务消息
     @ImportantField
-    private boolean fetchNamesrvAddrByAddressServer = false;
-    private int sendThreadPoolQueueCapacity = 10000;
-    private int pullThreadPoolQueueCapacity = 10000;
+    private boolean fetchNamesrvAddrByAddressServer = false;// 是否从地址服务器寻找Name Server地址，正式发布后，默认值为false
+    private int sendThreadPoolQueueCapacity = 10000;// 发送消息对应的线程池阻塞队列size
+    private int pullThreadPoolQueueCapacity = 10000;// 订阅消息对应的线程池阻塞队列size
 
-    private int filterServerNums = 0;
+    private int filterServerNums = 0;// 过滤服务器数量
 
-    private boolean longPollingEnable = true;
+    private boolean longPollingEnable = true;// Consumer订阅消息时，Broker是否开启长轮询
 
-    private long shortPollingTimeMills = 1000;
+    private long shortPollingTimeMills = 1000;// 如果是短轮询，服务器挂起时间
 
-    private boolean notifyConsumerIdsChangedEnable = true;
+    private boolean notifyConsumerIdsChangedEnable = true;// notify consumerId changed 开关
 
     private boolean highSpeedMode = false;
 

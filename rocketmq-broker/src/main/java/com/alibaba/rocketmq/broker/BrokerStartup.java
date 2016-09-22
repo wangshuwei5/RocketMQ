@@ -60,7 +60,7 @@ public class BrokerStartup {
     public static BrokerController start(BrokerController controller) {
         try {
 
-            controller.start();
+            controller.start();// 启动服务控制对象
             String tip =
                     "The broker[" + controller.getBrokerConfig().getBrokerName() + ", "
                             + controller.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
@@ -85,18 +85,18 @@ public class BrokerStartup {
         System.setProperty(RemotingCommand.RemotingVersionKey, Integer.toString(MQVersion.CurrentVersion));
 
 
-        if (null == System.getProperty(NettySystemConfig.SystemPropertySocketSndbufSize)) {
+        if (null == System.getProperty(NettySystemConfig.SystemPropertySocketSndbufSize)) {// Socket发送缓冲区大小,128M
             NettySystemConfig.socketSndbufSize = 131072;
         }
 
 
-        if (null == System.getProperty(NettySystemConfig.SystemPropertySocketRcvbufSize)) {
+        if (null == System.getProperty(NettySystemConfig.SystemPropertySocketRcvbufSize)) {// Socket接收缓冲区大小,128M
             NettySystemConfig.socketRcvbufSize = 131072;
         }
 
         try {
 
-            //PackageConflictDetect.detectFastjson();
+            //PackageConflictDetect.detectFastjson();// 检测包冲突
 
 
             Options options = ServerUtil.buildCommandlineOptions(new Options());
@@ -106,29 +106,29 @@ public class BrokerStartup {
             if (null == commandLine) {
                 System.exit(-1);
                 return null;
-            }
+            } // 解析命令行
 
 
-            final BrokerConfig brokerConfig = new BrokerConfig();
+            final BrokerConfig brokerConfig = new BrokerConfig();// 初始化配置文
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
             final NettyClientConfig nettyClientConfig = new NettyClientConfig();
-            nettyServerConfig.setListenPort(10911);
-            final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
+            nettyServerConfig.setListenPort(10911);// 监听端口
+            final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();// 存储配置
 
 
-            if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
+            if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {// 如果是slave，修改默认值
                 int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() - 10;
                 messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
             }
 
 
-            if (commandLine.hasOption('p')) {
+            if (commandLine.hasOption('p')) {// 打印默认配置
                 MixAll.printObjectProperties(null, brokerConfig);
                 MixAll.printObjectProperties(null, nettyServerConfig);
                 MixAll.printObjectProperties(null, nettyClientConfig);
                 MixAll.printObjectProperties(null, messageStoreConfig);
                 System.exit(0);
-            } else if (commandLine.hasOption('m')) {
+            } else if (commandLine.hasOption('m')) {// 指定配置文件
                 MixAll.printObjectProperties(null, brokerConfig, true);
                 MixAll.printObjectProperties(null, nettyServerConfig, true);
                 MixAll.printObjectProperties(null, nettyClientConfig, true);
@@ -166,7 +166,7 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
-            String namesrvAddr = brokerConfig.getNamesrvAddr();
+            String namesrvAddr = brokerConfig.getNamesrvAddr();// 检测Name Server地址设置是否正确 IP:PORT
             if (null != namesrvAddr) {
                 try {
                     String[] addrArray = namesrvAddr.split(";");
@@ -185,10 +185,10 @@ public class BrokerStartup {
             }
 
 
-            switch (messageStoreConfig.getBrokerRole()) {
+            switch (messageStoreConfig.getBrokerRole()) {// BrokerId的处理
                 case ASYNC_MASTER:
                 case SYNC_MASTER:
-                    brokerConfig.setBrokerId(MixAll.MASTER_ID);
+                    brokerConfig.setBrokerId(MixAll.MASTER_ID);// Master Id必须是0
                     break;
                 case SLAVE:
                     if (brokerConfig.getBrokerId() <= 0) {
@@ -201,9 +201,9 @@ public class BrokerStartup {
                     break;
             }
 
-            messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);
+            messageStoreConfig.setHaListenPort(nettyServerConfig.getListenPort() + 1);// Master监听Slave请求的端口，默认为服务端口+1
 
-            LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+            LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();// 初始化Logback
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(lc);
             lc.reset();
@@ -211,17 +211,17 @@ public class BrokerStartup {
             log = LoggerFactory.getLogger(LoggerName.BrokerLoggerName);
 
 
-            MixAll.printObjectProperties(log, brokerConfig);
+            MixAll.printObjectProperties(log, brokerConfig);// 打印启动参数
             MixAll.printObjectProperties(log, nettyServerConfig);
             MixAll.printObjectProperties(log, nettyClientConfig);
             MixAll.printObjectProperties(log, messageStoreConfig);
 
 
-            final BrokerController controller = new BrokerController(//
-                    brokerConfig, //
-                    nettyServerConfig, //
-                    nettyClientConfig, //
-                    messageStoreConfig);
+            final BrokerController controller = new BrokerController(// 初始化服务控制对象
+                    brokerConfig, // broker配置
+                    nettyServerConfig, // netty服务配置
+                    nettyClientConfig, // netty客户端配置
+                    messageStoreConfig);// 消息存储配置
             boolean initResult = controller.initialize();
             if (!initResult) {
                 controller.shutdown();
